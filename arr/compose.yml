@@ -1,0 +1,166 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    environment:
+      - VPN_TYPE=wireguard
+      - VPN_SERVICE_PROVIDER=custom
+      - TZ=${TZ}
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - WIREGUARD_PUBLIC_KEY=${WIREGUARD_PUBLIC_KEY}
+      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+      - WIREGUARD_ENDPOINT_IP=${WIREGUARD_ENDPOINT_IP}
+      - WIREGUARD_ENDPOINT_PORT=${WIREGUARD_ENDPOINT_PORT}
+      - WIREGUARD_ALLOWED_IPS=${WIREGUARD_ALLOWED_IPS}
+      - WIREGUARD_PERSISTENT_KEEPALIVE=${WIREGUARD_PERSISTENT_KEEPALIVE}
+      - FIREWALL_OUTBOUND_SUBNETS=${FIREWALL_OUTBOUND_SUBNETS}
+      - FIREWALL_VPN_INPUT_PORTS=${FIREWALL_VPN_INPUT_PORTS}
+      - FIREWALL_VPN_OUTPUT_PORTS=${FIREWALL_VPN_OUTPUT_PORTS}
+    volumes:
+      # Put your Proton WireGuard config here
+      - ${WIREGUARD_CONFIG_DIR}:/gluetun/wireguard
+    ports:
+      # Expose UIs through the VPN container
+      - "${TRANSMISSION_PORT}:9091"  # Transmission
+      - "${RADARR_PORT}:7878"  # Radarr
+      - "${SONARR_PORT}:8989"  # Sonarr
+      - "${LIDARR_PORT}:8686"  # Lidarr
+      - "${PROWLARR_PORT}:9696"  # Prowlarr
+    restart: unless-stopped
+
+  transmission:
+    image: linuxserver/transmission
+    container_name: transmission
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${TRANSMISSION_CONFIG_DIR}:/config
+      - ${NAS_ARR_COMPLETED}:/data/completed
+      - ${NAS_ARR_INCOMPLETE}:/data/incomplete
+      - ${NAS_ARR_WATCH}:/data/watch
+    restart: unless-stopped
+    
+  radarr:
+    image: linuxserver/radarr:latest
+    container_name: radarr
+    network_mode: "service:gluetun"
+    depends_on:
+      - transmission
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${RADARR_CONFIG_DIR}:/config
+      - ${NAS_ARR_COMPLETED}:/data/completed
+      - ${NAS_ARR_INCOMPLETE}:/data/incomplete
+      - ${NAS_ARR_WATCH}:/data/watch
+      - ${NAS_MEDIA_MOVIES}:/mnt/nas/Media/Movies
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${RADARR_PORT}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  sonarr:
+    image: linuxserver/sonarr:latest
+    container_name: sonarr
+    network_mode: "service:gluetun"
+    depends_on:
+      - transmission
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${SONARR_CONFIG_DIR}:/config
+      - ${NAS_ARR_COMPLETED}:/data/completed
+      - ${NAS_ARR_INCOMPLETE}:/data/incomplete
+      - ${NAS_ARR_WATCH}:/data/watch
+      - ${NAS_MEDIA_SERIES}:/mnt/nas/Media/Series
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${SONARR_PORT}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  lidarr:
+    image: linuxserver/lidarr:latest
+    container_name: lidarr
+    network_mode: "service:gluetun"
+    depends_on:
+      - transmission
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${LIDARR_CONFIG_DIR}:/config
+      - ${NAS_ARR_COMPLETED}:/data/completed
+      - ${NAS_ARR_INCOMPLETE}:/data/incomplete
+      - ${NAS_ARR_WATCH}:/data/watch
+      - ${NAS_MEDIA_MUSIC}:/mnt/nas/Media/Music
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${LIDARR_PORT}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  prowlarr:
+    image: linuxserver/prowlarr:latest
+    container_name: prowlarr
+    network_mode: "service:gluetun"
+    depends_on:
+      - transmission
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${PROWLARR_CONFIG_DIR}:/config
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PROWLARR_PORT}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  flaresolverr:
+    image: flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+      - TZ=${TZ}
+      - LOG_LEVEL=${FLARESOLVERR_LOG_LEVEL}
+    restart: unless-stopped
+    network_mode: "service:gluetun"   # important
+
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=America/New_York
+    volumes:
+      - ${SABNZBD_CONFIG_DIR}:/config
+      - ${NAS_ARR_COMPLETED}:/data/completed
+      - ${NAS_ARR_INCOMPLETE}:/data/incomplete
+    ports:
+      - ${SABNZBD_PORT}:8080
+    restart: unless-stopped

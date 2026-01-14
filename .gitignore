@@ -1,0 +1,8 @@
+.env
+.env.*
+!**/.env.sample
+.DS_Store
+logs/
+**/.terraform/
+*.tfstate
+*.tfstate.*

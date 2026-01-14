@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Derive owner/repo from the bare repo path.
+repo_path="$(pwd)"
+repo_name="$(basename "${repo_path}")"
+repo_name="${repo_name%.git}"
+owner_name="$(basename "$(dirname "${repo_path}")")"
+
+# Use Forgejo-provided env when available.
+if [[ -n "${GITEA_REPO_NAME:-}" ]]; then
+  repo_name="${GITEA_REPO_NAME}"
+fi
+if [[ -n "${GITEA_REPO_OWNER_NAME:-}" ]]; then
+  owner_name="${GITEA_REPO_OWNER_NAME}"
+fi
+
+mirror_root="/mnt/repos-mirror"
+mirror_path="${mirror_root}/${owner_name}/${repo_name}.git"
+
+mkdir -p "${mirror_path}"
+
+rsync -a --delete "${repo_path}/" "${mirror_path}/"

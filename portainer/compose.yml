@@ -1,0 +1,23 @@
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+
+    security_opt:
+      - no-new-privileges:true
+
+    ports:
+      - "${PORTAINER_UI_PORT}:9000"   # Web UI
+      - "${PORTAINER_HTTPS_UI_PORT}:9443"   # HTTPS UI (optional)
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${PORTAINER_DATA_DIR}:/data
+
+    environment:
+      - TZ=${TZ}
+
+volumes:
+  portainer_data:
+

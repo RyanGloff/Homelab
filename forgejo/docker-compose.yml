@@ -1,0 +1,39 @@
+services:
+  forgejo-init:
+    image: alpine:3.19
+    command: >
+      sh -c 'if [ ! -f /data/gitea/custom/templates/hooks/post-receive ]; then
+        install -D -m 755 /hook/post-receive /data/gitea/custom/templates/hooks/post-receive;
+      fi'
+    volumes:
+      - forgejo-data:/data
+      - ./hooks/post-receive:/hook/post-receive:ro
+
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:1.21
+    container_name: forgejo
+    depends_on:
+      forgejo-init:
+        condition: service_completed_successfully
+    environment:
+      - USER_UID=${FORGEJO_USER_UID}
+      - USER_GID=${FORGEJO_USER_GID}
+      - FORGEJO__server__DOMAIN=${FORGEJO_HOST}
+      - FORGEJO__server__SSH_DOMAIN=${FORGEJO_HOST}
+      - FORGEJO__server__ROOT_URL=http://${FORGEJO_HOST}:${FORGEJO_HTTP_PORT}/
+      - FORGEJO__server__SSH_PORT=${FORGEJO_SSH_PORT}
+      - FORGEJO__server__SSH_LISTEN_PORT=${FORGEJO_SSH_PORT}
+      - FORGEJO__server__START_SSH_SERVER=${FORGEJO_START_SSH_SERVER}
+      - FORGEJO__server__DISABLE_SSH=${FORGEJO_DISABLE_SSH}
+      - FORGEJO__repository__ENABLE_PUSH_CREATE_USER=${FORGEJO_ENABLE_PUSH_CREATE_USER}
+      - FORGEJO__repository__ROOT=${FORGEJO_REPO_ROOT}
+    volumes:
+      - forgejo-data:/data
+      - ${FORGEJO_MIRROR_HOST_PATH}:/mnt/repos-mirror
+    ports:
+      - "${FORGEJO_HTTP_PORT}:3000"
+      - "${FORGEJO_SSH_PORT}:${FORGEJO_SSH_PORT}"
+    restart: unless-stopped
+
+volumes:
+  forgejo-data:

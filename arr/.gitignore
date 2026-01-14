@@ -1,0 +1,10 @@
+.env
+config/
+downloads/
+incomplete/
+jellyfin-cache/
+jellyfin-config/
+plex-config/
+prowlarr-config/
+radarr-config/
+sonarr-config/

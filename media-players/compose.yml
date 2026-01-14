@@ -1,0 +1,46 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    ports:
+      - "${JELLYFIN_PORT}:8096" # Web UI
+    volumes:
+      - ${JELLYFIN_CONFIG_DIR}:/config
+      - ${JELLYFIN_CACHE_DIR}:/cache
+      - ${NAS_MEDIA}:/media:ro
+    environment:
+      - TZ=${TZ}
+    restart: unless-stopped
+
+  plex:
+    image: linuxserver/plex:latest
+    container_name: plex
+    ports:
+      - "${PLEX_PORT}:32400" # Web UI
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - VERSION=${PLEX_VERSION}
+      - PLEX_CLAIM=${PLEX_CLAIM}
+    volumes:
+      - ${PLEX_CONFIG_DIR}:/config
+      - ${NAS_MEDIA}:/media:ro
+      - ${NAS_MEDIA_MOVIES}:/movies:ro
+      - ${NAS_MEDIA_SERIES}:/series:ro
+      - ${PLEX_TRANSCODE_DIR}:/transcode
+    restart: unless-stopped
+
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    restart: unless-stopped
+    ports:
+      - "${NAVIDROME_PORT}:4533"
+    environment:
+      ND_SCANSCHEDULE: 1h
+      ND_LOGLEVEL: info
+      ND_SESSIONTIMEOUT: 24h
+    volumes:
+      - ${NAVIDROME_DATA_DIR}:/data
+      - ${NAS_MEDIA_MUSIC}:/music:ro

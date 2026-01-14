@@ -1,0 +1,44 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/configs/services/
+
+- Arr Stack:
+    - Radarr:
+        href: http://192.168.55.15:7878
+    - Lidarr:
+        href: http://192.168.55.15:8686
+    - Sonarr:
+        href: http://192.168.55.15:8989
+    - Prowlarr:
+        href: http://192.168.55.15:9696
+    - Transmission:
+        href: http://192.168.55.15:9091/transmission/web
+    - SABnzbd:
+        href: http://192.168.55.15:8091
+
+- Media Players:
+    - Jellyfin:
+        href: http://192.168.55.15:8096/web/#/home
+    - Plex:
+        href: http://192.168.55.15:32400/web/index.html#!/
+    - Immich:
+        href: http://192.168.55.15:2283/photos
+    - Navidrome:
+        href: http://192.168.55.15:4533/app/#/login
+
+- Infrastructure:
+    - Proxmox:
+        href: http://192.168.55.5:8006
+    - Portainer:
+        href: http://192.168.55.15:9443
+    - TrueNAS:
+        href: http://192.168.55.11
+    - PfSense:
+        href: http://192.168.1.1
+    - Unifi Network:
+        href: http://192.168.10.4:8443
+    - RaspberryPi:
+        href: http://192.168.55.3
+    - Forgejo:
+        href: http://192.168.55.15:5000
+
